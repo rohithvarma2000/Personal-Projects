@@ -15,7 +15,7 @@ export async function complete(system: string, messages: ChatMessage[]): Promise
     if (provider === 'anthropic') {
       res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST', signal, headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model, max_tokens: 500, temperature: 0.3, system, messages }),
+        body: JSON.stringify({ model, max_tokens: 500, system, messages }),
       })
     } else if (provider === 'openai') {
       const base = (process.env.AI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '')
@@ -28,7 +28,12 @@ export async function complete(system: string, messages: ChatMessage[]): Promise
     if (e instanceof AiError) throw e
     throw new AiError(504, 'provider unreachable')
   }
-  if (!res.ok) throw new AiError(res.status === 429 ? 429 : 502, `provider error ${res.status}`)
+  if (!res.ok) {
+    // Log only the provider's error type/message (never the visitor's text) to make failures diagnosable.
+    let reason = ''
+    try { const b = (await res.json()) as { error?: { type?: string; message?: string } }; reason = `${b.error?.type ?? ''}: ${(b.error?.message ?? '').slice(0, 200)}` } catch { /* ignore */ }
+    throw new AiError(res.status === 429 ? 429 : 502, `provider error ${res.status} ${reason}`.trim())
+  }
   const data = (await res.json()) as { content?: Array<{ type: string; text?: string }>; choices?: Array<{ message?: { content?: string } }> }
   const text = provider === 'anthropic' ? data.content?.filter((b) => b.type === 'text').map((b) => b.text).join('') : data.choices?.[0]?.message?.content
   if (!text?.trim()) throw new AiError(502, 'empty response')
