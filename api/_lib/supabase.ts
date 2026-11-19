@@ -1,6 +1,7 @@
 /** Minimal PostgREST client using the SERVICE ROLE key. Server-only; the key never reaches the browser. */
 export function supabaseConfig() {
-  const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  // PORTFOLIO_SUPABASE_KEY wins so it can be set by hand when an integration locks SUPABASE_SERVICE_ROLE_KEY.
+  const url = process.env.SUPABASE_URL, key = process.env.PORTFOLIO_SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
   return url && key ? { url: url.replace(/\/$/, ''), key } : null
 }
 
