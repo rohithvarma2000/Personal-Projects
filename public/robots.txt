@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://rohithkatari.vercel.app/sitemap.xml
+Sitemap: https://personal-projects-henna.vercel.app/sitemap.xml
